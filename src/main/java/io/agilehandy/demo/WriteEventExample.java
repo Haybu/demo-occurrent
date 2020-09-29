@@ -39,6 +39,7 @@ import java.util.UUID;
 public class WriteEventExample implements ApplicationRunner {
 
 	private final EventStore eventStore;
+	//private final Converter converter;
 
 	public WriteEventExample(EventStore eventStore) {
 		this.eventStore = eventStore;
