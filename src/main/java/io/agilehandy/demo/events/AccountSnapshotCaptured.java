@@ -15,6 +15,8 @@
  */
 package io.agilehandy.demo.events;
 
+import lombok.Data;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -22,23 +24,12 @@ import java.util.UUID;
  * @author Haytham Mohamed
  **/
 
-public interface AccountEvent {
-
-	enum Activity {
-		OPEN, WITHDRAW, DEPOSIT, CLOSE, SNAPSHOT;
+@Data
+public class AccountSnapshotCaptured extends AbstractAccountEvent implements AccountEvent {
+	public AccountSnapshotCaptured() {
+		this.setEventId(UUID.fromString("0"));
+		this.setActivity(Activity.SNAPSHOT);
+		this.setTime(LocalDateTime.now());
 	}
-
-	UUID getEventId();
-	UUID getAccountId();
-	Long getCustomerId();
-	Double getAmount();
-	Activity getActivity();
-	LocalDateTime getTime();
-
-	void setEventId(UUID id);
-	void setAccountId(UUID id);
-	void setCustomerId(Long id);
-	void setAmount(Double amount);
-	void setTime(LocalDateTime time);
 
 }
