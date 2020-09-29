@@ -15,20 +15,22 @@
  */
 package io.agilehandy.demo;
 
+import io.agilehandy.demo.domain.AccountDeposited;
 import io.agilehandy.demo.domain.AccountEvent;
 import io.agilehandy.demo.domain.AccountOpened;
+import io.agilehandy.demo.domain.AccountWithdrew;
 import io.agilehandy.demo.domain.Serialization;
 import io.cloudevents.CloudEvent;
 import org.occurrent.eventstore.api.reactor.EventStore;
 import org.occurrent.eventstore.api.reactor.EventStoreOperations;
 import org.occurrent.eventstore.api.reactor.EventStream;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import javax.annotation.PreDestroy;
 import java.util.UUID;
 
 /**
@@ -36,7 +38,7 @@ import java.util.UUID;
  **/
 
 @Component
-public class WriteEventExample implements ApplicationRunner {
+public class WriteEventExample implements ApplicationRunner, DisposableBean {
 
 	private final String STREAM_NAME = "stream01";
 
@@ -53,32 +55,45 @@ public class WriteEventExample implements ApplicationRunner {
 	@Override
 	public void run(ApplicationArguments args) {
 
-		// create a new account
+		// create a new account event
 		UUID accountId = UUID.randomUUID();
-		AccountOpened accountOpenedEvent = new AccountOpened();
-		accountOpenedEvent.setAccountId(accountId);
-		accountOpenedEvent.setAmount(new Double(100));
+		AccountOpened open = new AccountOpened();
+		open.setAccountId(accountId);
+		open.setAmount(new Double(100));
 
-		CloudEvent event = serialization.serialize(accountOpenedEvent);
+		// withdraw some money
+		AccountWithdrew withdrew = new AccountWithdrew();
+		withdrew.setAccountId(accountId);
+		withdrew.setAmount(new Double(10));
+
+		// deposity some money
+		AccountDeposited deposited = new AccountDeposited();
+		deposited.setAccountId(accountId);
+		deposited.setAmount(new Double(30));
+
 
 		// Write
-		Mono<Void> mono = eventStore.write(STREAM_NAME, Flux.just(event));
+		Mono<Void> openMono = eventStore.write(STREAM_NAME,
+				Flux.just(serialization.serialize(open)));
+
+		Mono<Void> withdrawMono = eventStore.write(STREAM_NAME,
+				Flux.just(serialization.serialize(withdrew)));
+
+		Mono<Void> depositMono = eventStore.write(STREAM_NAME,
+				Flux.just(serialization.serialize(deposited)));
 
 		// Read
 		Mono<EventStream<CloudEvent>> eventStream = eventStore.read(STREAM_NAME);
 
-		mono.then(eventStream)
+		openMono
+				.then(withdrawMono)
+				.then(depositMono)
+				.then(eventStream)
 				.flatMapMany(es -> es.events())
 				.map(serialization::deserialize)
 				.map(this::toString)
 				.doOnNext(System.out::println)
 				.subscribe();
-	}
-
-	@PreDestroy
-	public void deleteStream() {
-		// Delete an entire event stream
-		eventStoreOperations.deleteEventStream(STREAM_NAME);
 	}
 
 	public String toString(AccountEvent e) {
@@ -89,4 +104,9 @@ public class WriteEventExample implements ApplicationRunner {
 				+", Time: " + e.getTime();
 	}
 
+	@Override
+	public void destroy() throws Exception {
+		// Delete an entire event stream
+		eventStoreOperations.deleteEventStream(STREAM_NAME);
+	}
 }
