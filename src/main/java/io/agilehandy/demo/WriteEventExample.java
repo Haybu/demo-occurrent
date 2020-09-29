@@ -15,9 +15,12 @@
  */
 package io.agilehandy.demo;
 
+import io.agilehandy.demo.domain.AccountEvent;
+import io.agilehandy.demo.domain.AccountOpened;
+import io.agilehandy.demo.domain.Serialization;
 import io.cloudevents.CloudEvent;
-import io.cloudevents.core.builder.CloudEventBuilder;
 import org.occurrent.eventstore.api.reactor.EventStore;
+import org.occurrent.eventstore.api.reactor.EventStoreOperations;
 import org.occurrent.eventstore.api.reactor.EventStream;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -25,10 +28,7 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import javax.annotation.PreDestroy;
 import java.util.UUID;
 
 /**
@@ -38,38 +38,55 @@ import java.util.UUID;
 @Component
 public class WriteEventExample implements ApplicationRunner {
 
-	private final EventStore eventStore;
-	//private final Converter converter;
+	private final String STREAM_NAME = "stream01";
 
-	public WriteEventExample(EventStore eventStore) {
+	private final EventStore eventStore;
+	private final EventStoreOperations eventStoreOperations;
+	private final Serialization serialization;
+
+	public WriteEventExample(EventStore eventStore, EventStoreOperations eventStoreOperations, Serialization serialization) {
 		this.eventStore = eventStore;
+		this.eventStoreOperations = eventStoreOperations;
+		this.serialization = serialization;
 	}
 
-
 	@Override
-	public void run(ApplicationArguments args) throws Exception {
+	public void run(ApplicationArguments args) {
 
-		CloudEvent event = CloudEventBuilder.v1()
-				.withId(UUID.randomUUID().toString())
-				.withSource(URI.create("io.agilehandy.demo"))
-				.withType("HelloWorld")
-				.withTime(LocalDateTime.now().atOffset(ZoneOffset.UTC))
-				.withSubject("demo")
-				.withDataContentType("application/json")
-				.withData("{ \"message\" : \"hello\" }".getBytes())
-				.build();
+		// create a new account
+		UUID accountId = UUID.randomUUID();
+		AccountOpened accountOpenedEvent = new AccountOpened();
+		accountOpenedEvent.setAccountId(accountId);
+		accountOpenedEvent.setAmount(new Double(100));
+
+		CloudEvent event = serialization.serialize(accountOpenedEvent);
 
 		// Write
-		Mono<Void> mono = eventStore.write("stream", Flux.just(event));
+		Mono<Void> mono = eventStore.write(STREAM_NAME, Flux.just(event));
 
 		// Read
-		Mono<EventStream<CloudEvent>> eventStream = eventStore.read("stream");
+		Mono<EventStream<CloudEvent>> eventStream = eventStore.read(STREAM_NAME);
 
 		mono.then(eventStream)
 				.flatMapMany(es -> es.events())
-				.map(e -> new String(e.getData(), StandardCharsets.UTF_8))
+				.map(serialization::deserialize)
+				.map(this::toString)
 				.doOnNext(System.out::println)
 				.subscribe();
+	}
+
+	@PreDestroy
+	public void deleteStream() {
+		// Delete an entire event stream
+		eventStoreOperations.deleteEventStream(STREAM_NAME);
+	}
+
+	public String toString(AccountEvent e) {
+		return "EventId: " + e.getEventId()
+				+", AccountId: " + e.getAccountId()
+				+", Activity: " + e.getActivity()
+				+", Amount: " + e.getAmount()
+				+", Time: " + e.getTime();
 	}
 
 }

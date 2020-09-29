@@ -15,7 +15,9 @@
  */
 package io.agilehandy.demo;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.reactivestreams.client.MongoClient;
+import io.agilehandy.demo.domain.Serialization;
 import org.occurrent.eventstore.mongodb.spring.reactor.EventStoreConfig;
 import org.occurrent.eventstore.mongodb.spring.reactor.SpringReactorMongoEventStore;
 import org.occurrent.mongodb.timerepresentation.TimeRepresentation;
@@ -26,6 +28,8 @@ import org.springframework.data.mongodb.ReactiveMongoTransactionManager;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.SimpleReactiveMongoDatabaseFactory;
 
+import java.net.URI;
+
 /**
  * @author Haytham Mohamed
  **/
@@ -33,32 +37,43 @@ import org.springframework.data.mongodb.core.SimpleReactiveMongoDatabaseFactory;
 // run a local mongodb replicaset, from ./replica folder run $docker-compose up -d
 
 @Configuration
-public class MongodbConfiguration {
-
-	@Value("${spring.data.mongodb.database:database}")
-	private String database;
-
-	private String COLLECTION_NAME = "events";
+public class DemoConfiguration {
 
 	@Bean
-	public ReactiveMongoTransactionManager mongoTransactionManager(MongoClient mongoClient) {
-		return new ReactiveMongoTransactionManager(new SimpleReactiveMongoDatabaseFactory(mongoClient, database));
+	public Serialization serialization(ObjectMapper objectMapper) {
+		return new Serialization(objectMapper, URI.create("urn:agilehandy:domain:account"));
 	}
 
-	@Bean
-	public EventStoreConfig eventStoreConfig(ReactiveMongoTransactionManager reactiveMongoTransactionManager) {
-		return new EventStoreConfig.Builder()
-				// The collection where all events will be stored
-				.eventStoreCollectionName(COLLECTION_NAME)
-				.transactionConfig(reactiveMongoTransactionManager)
-				// How the CloudEvent "time" property will be serialized in MongoDB! !!Important!!
-				.timeRepresentation(TimeRepresentation.RFC_3339_STRING)
-				.build();
+
+	@Configuration
+	static class MongodbConfiguration {
+		@Value("${spring.data.mongodb.database:database}")
+		private String database;
+
+		private String COLLECTION_NAME = "accounts";
+
+		@Bean
+		public ReactiveMongoTransactionManager mongoTransactionManager(MongoClient mongoClient) {
+			return new ReactiveMongoTransactionManager(new SimpleReactiveMongoDatabaseFactory(mongoClient, database));
+		}
+
+		@Bean
+		public EventStoreConfig eventStoreConfig(ReactiveMongoTransactionManager reactiveMongoTransactionManager) {
+			return new EventStoreConfig.Builder()
+					// The collection where all events will be stored
+					.eventStoreCollectionName(COLLECTION_NAME)
+					.transactionConfig(reactiveMongoTransactionManager)
+					// How the CloudEvent "time" property will be serialized in MongoDB! !!Important!!
+					.timeRepresentation(TimeRepresentation.RFC_3339_STRING)
+					.build();
+		}
+
+		@Bean
+		public SpringReactorMongoEventStore springReactorMongoEventStore(ReactiveMongoTemplate mongoTemplate, EventStoreConfig eventStoreConfig) {
+			return new SpringReactorMongoEventStore(mongoTemplate, eventStoreConfig);
+		}
 	}
 
-	@Bean
-	public SpringReactorMongoEventStore springReactorMongoEventStore(ReactiveMongoTemplate mongoTemplate, EventStoreConfig eventStoreConfig) {
-		return new SpringReactorMongoEventStore(mongoTemplate, eventStoreConfig);
-	}
+
 
 }
