@@ -15,7 +15,12 @@
  */
 package io.agilehandy.demo.domain;
 
+import io.agilehandy.demo.events.AccountDeposited;
+import io.agilehandy.demo.events.AccountEvent;
+import io.agilehandy.demo.events.AccountOpened;
+import io.agilehandy.demo.events.AccountWithdrew;
 import lombok.Data;
+import reactor.core.publisher.Flux;
 
 import java.util.UUID;
 
@@ -26,8 +31,38 @@ import java.util.UUID;
 @Data
 public class Account {
 
-	private UUID id;
+	public static Flux<AccountEvent> openAccount(Long customerId, UUID accountId, Double amount) {
+		AccountOpened account = new AccountOpened();
+		account.setCustomerId(customerId);
+		account.setAccountId(accountId);
+		account.setAmount(amount);
+		return Flux.just(account);
+	}
 
-	private Double balance;
+	public static Flux<AccountEvent> withdraw(Flux<AccountEvent> eventStream, Double amount) {
+		return eventStream.last()
+				.filter(e -> e.getAmount().doubleValue() > amount.doubleValue())
+				.map(e -> {
+					AccountEvent withdrew = new AccountWithdrew();
+					withdrew.setAccountId(e.getAccountId());
+					withdrew.setAmount(amount);
+					withdrew.setCustomerId(e.getCustomerId());
+					return withdrew;
+				})
+				.flux();
+	}
+
+	public static Flux<AccountEvent> deposit(Flux<AccountEvent> eventStream, Double amount) {
+		return eventStream
+				.elementAt(0)
+				.map(e -> {
+					AccountEvent deposit = new AccountDeposited();
+					deposit.setAccountId(e.getAccountId());
+					deposit.setAmount(amount);
+					deposit.setCustomerId(e.getCustomerId());
+					return deposit;
+				})
+				.flux();
+	}
 
 }

@@ -13,7 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.agilehandy.demo.domain;
+package io.agilehandy.demo.events;
+
+import lombok.Data;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -22,21 +25,14 @@ import java.util.UUID;
  * @author Haytham Mohamed
  **/
 
-public interface AccountEvent {
+@Data
+@ToString
+public class AccountClosed extends AbstractAccountEvent implements AccountEvent {
 
-	enum Activity {
-		OPEN, WITHDRAW, DEPOSIT, CLOSE;
+	public AccountClosed() {
+		this.setEventId(UUID.randomUUID());
+		this.setActivity(Activity.CLOSE);
+		this.setTime(LocalDateTime.now());
 	}
-
-	UUID getEventId();
-	UUID getAccountId();
-	Double getAmount();
-	Activity getActivity();
-	LocalDateTime getTime();
-
-	void setEventId(UUID id);
-	void setAccountId(UUID id);
-	void setAmount(Double amount);
-	void setTime(LocalDateTime time);
 
 }

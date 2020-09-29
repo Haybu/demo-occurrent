@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.agilehandy.demo.domain;
+package io.agilehandy.demo.events;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -39,6 +39,7 @@ import static java.util.Objects.*;
 public class Serialization {
 
 	private final String AMOUNT_FIELD_NAME = "amount";
+	private final String CUSTOMER_ID_FIELD_NAME = "customerId";
 
 	private final ObjectMapper objectMapper;
 	private final URI source;
@@ -67,8 +68,10 @@ public class Serialization {
 		LocalDateTime time = requireNonNull(c.getTime()).toLocalDateTime();
 		Map<String, Object> data = deserializeData(c);
 		Double amount = (Double)data.get(AMOUNT_FIELD_NAME);
+		Long customerId = Long.valueOf((Integer)data.get(CUSTOMER_ID_FIELD_NAME));
 
 		event.setAccountId(accountId);
+		event.setCustomerId(customerId);
 		event.setEventId(eventId);
 		event.setTime(time);
 		event.setAmount(amount);
@@ -99,6 +102,7 @@ public class Serialization {
 	private byte[] toBytes(AccountEvent event) {
 		final Map<String, Object> eventAsMap = new HashMap<>();
 		eventAsMap.put(AMOUNT_FIELD_NAME, event.getAmount());
+		eventAsMap.put(CUSTOMER_ID_FIELD_NAME, event.getCustomerId());
 		try {
 			return objectMapper.writeValueAsBytes(eventAsMap);
 		} catch (JsonProcessingException jsonProcessingException) {

@@ -17,7 +17,7 @@ package io.agilehandy.demo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.reactivestreams.client.MongoClient;
-import io.agilehandy.demo.domain.Serialization;
+import io.agilehandy.demo.events.Serialization;
 import org.occurrent.eventstore.mongodb.spring.reactor.EventStoreConfig;
 import org.occurrent.eventstore.mongodb.spring.reactor.SpringReactorMongoEventStore;
 import org.occurrent.mongodb.timerepresentation.TimeRepresentation;

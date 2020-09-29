@@ -13,26 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.agilehandy.demo.domain;
+package io.agilehandy.demo.web;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
-import lombok.ToString;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
  * @author Haytham Mohamed
  **/
 
 @Data
-@ToString
-public class AccountWithdrew extends AbstractAccountEvent implements AccountEvent {
-
-	public AccountWithdrew() {
-		this.setEventId(UUID.randomUUID());
-		this.setActivity(Activity.WITHDRAW);
-		this.setTime(LocalDateTime.now());
-	}
-
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class AccountRequest {
+	private Long customerId;
+	private String accountId;
+	private Double amount;
 }

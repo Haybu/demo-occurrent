@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.agilehandy.demo.domain;
+package io.agilehandy.demo.events;
 
 import lombok.Data;
 import lombok.ToString;
@@ -27,11 +27,11 @@ import java.util.UUID;
 
 @Data
 @ToString
-public class AccountClosed extends AbstractAccountEvent implements AccountEvent {
+public class AccountWithdrew extends AbstractAccountEvent implements AccountEvent {
 
-	public AccountClosed() {
+	public AccountWithdrew() {
 		this.setEventId(UUID.randomUUID());
-		this.setActivity(Activity.CLOSE);
+		this.setActivity(Activity.WITHDRAW);
 		this.setTime(LocalDateTime.now());
 	}
 

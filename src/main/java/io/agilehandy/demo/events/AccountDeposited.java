@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.agilehandy.demo.domain;
+package io.agilehandy.demo.events;
 
 import lombok.Data;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -25,16 +26,13 @@ import java.util.UUID;
  **/
 
 @Data
-public abstract class AbstractAccountEvent {
+@ToString
+public class AccountDeposited extends AbstractAccountEvent implements AccountEvent {
 
-	private UUID eventId;
-
-	private UUID accountId;
-
-	private AccountEvent.Activity activity;
-
-	private Double amount;
-
-	private LocalDateTime time;
+	public AccountDeposited() {
+		this.setEventId(UUID.randomUUID());
+		this.setActivity(Activity.DEPOSIT);
+		this.setTime(LocalDateTime.now());
+	}
 
 }
