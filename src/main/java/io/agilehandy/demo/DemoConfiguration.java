@@ -45,7 +45,7 @@ import java.net.URI;
 // run a local mongodb replicaset, from ./replica folder run $docker-compose up -d
 
 @Configuration
-@EnableReactiveMongoRepositories//(basePackages = "io.agilehandy.demo.snapshot")
+@EnableReactiveMongoRepositories
 public class DemoConfiguration {
 
 	@Bean
