@@ -1,4 +1,4 @@
-### CQRS using Occurrent Event Sourcing Utilities
+### CQRS using Reactive Spring with Occurrent Event Sourcing Utilities
 
 reference: https://occurrent.org/
 
