@@ -19,50 +19,50 @@ import io.agilehandy.demo.events.AccountDeposited;
 import io.agilehandy.demo.events.AccountEvent;
 import io.agilehandy.demo.events.AccountOpened;
 import io.agilehandy.demo.events.AccountWithdrew;
+import io.agilehandy.demo.snapshot.Snapshot;
 import lombok.Data;
-import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
 /**
  * @author Haytham Mohamed
+ *
+ * Note: no state
  **/
 
 @Data
 public class Account {
 
-	public static Flux<AccountEvent> openAccount(Long customerId, UUID accountId, Double amount) {
+	public static Mono<AccountEvent> openAccount(UUID accountId, Long customerId, Double amount) {
 		AccountOpened account = new AccountOpened();
 		account.setCustomerId(customerId);
 		account.setAccountId(accountId);
 		account.setAmount(amount);
-		return Flux.just(account);
+		return Mono.just(account);
 	}
 
-	public static Flux<AccountEvent> withdraw(Flux<AccountEvent> eventStream, Double amount) {
-		return eventStream.last()
-				.filter(e -> e.getAmount().doubleValue() > amount.doubleValue())
-				.map(e -> {
+	public static Mono<AccountEvent> withdraw(Mono<Snapshot> snapshot, Double amount) {
+		return snapshot
+				.filter(s -> s.getBalance().doubleValue() > amount.doubleValue())
+				.map(s -> {
 					AccountEvent withdrew = new AccountWithdrew();
-					withdrew.setAccountId(e.getAccountId());
+					withdrew.setAccountId(UUID.fromString(s.getAccountId()));
 					withdrew.setAmount(amount);
-					withdrew.setCustomerId(e.getCustomerId());
+					withdrew.setCustomerId(s.getCustomerId());
 					return withdrew;
-				})
-				.flux();
+				});
 	}
 
-	public static Flux<AccountEvent> deposit(Flux<AccountEvent> eventStream, Double amount) {
-		return eventStream
-				.elementAt(0)
-				.map(e -> {
+	public static Mono<AccountEvent> deposit(Mono<Snapshot> snapshot, Double amount) {
+		return snapshot
+				.map(s -> {
 					AccountEvent deposit = new AccountDeposited();
-					deposit.setAccountId(e.getAccountId());
+					deposit.setAccountId(UUID.fromString(s.getAccountId()));
 					deposit.setAmount(amount);
-					deposit.setCustomerId(e.getCustomerId());
+					deposit.setCustomerId(s.getCustomerId());
 					return deposit;
-				})
-				.flux();
+				});
 	}
 
 }

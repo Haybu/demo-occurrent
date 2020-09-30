@@ -15,18 +15,15 @@
  */
 package io.agilehandy.demo.web;
 
-import io.agilehandy.demo.events.AccountEvent;
 import io.agilehandy.demo.events.Serialization;
 import lombok.extern.slf4j.Slf4j;
 import org.occurrent.eventstore.api.reactor.EventStore;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.UUID;
@@ -57,11 +54,12 @@ public class AccountController {
 		log.info("creating a new account");
 		UUID accountId = UUID.randomUUID();
 		return service
-				.execute(request.getCustomerId().toString(), events -> Account.openAccount(request.getCustomerId(), accountId, request.getAmount()))
+				.execute(accountId.toString(), request.getCustomerId(), events -> Account.openAccount(accountId, request.getCustomerId(), request.getAmount()))
 				.then(Mono.just(ResponseEntity.ok(accountId.toString())))
 				;
 	}
 
+	/** in CQRS reading is a different route
 	@GetMapping("/accounts/{customerId}")
 	public Flux<AccountEvent> accounts(@PathVariable Long customerId) {
 		log.info("reading accounts for customer id: " + customerId);
@@ -78,21 +76,20 @@ public class AccountController {
 				.filter(e -> e.getAccountId().equals(UUID.fromString(accountId)))
 				;
 	}
+	 **/
 
 	@PutMapping("/accounts/withdraw/{accountId}")
 	public Mono<ResponseEntity<?>> withdrawAccount(@RequestBody AccountRequest request) {
-		UUID accountId = UUID.fromString(request.getAccountId());
 		return service
-				.execute(request.getCustomerId().toString(), events -> Account.withdraw(events, request.getAmount()))
-		        .then(Mono.just(ResponseEntity.ok(request.getAmount() + " is withdrawn from account " + accountId.toString())));
+				.execute(request.getAccountId(), request.getCustomerId(), snapshot -> Account.withdraw(snapshot, request.getAmount()))
+		        .then(Mono.just(ResponseEntity.ok(request.getAmount() + " is withdrawn from account " + request.getAccountId())));
 	}
 
 	@PutMapping("/accounts/deposit/{accountId}")
 	public Mono<ResponseEntity<?>> depositAccount(@RequestBody AccountRequest request) {
-		UUID accountId = UUID.fromString(request.getAccountId());
 		return service
-				.execute(request.getCustomerId().toString(), events -> Account.deposit(events, request.getAmount()))
-				.then(Mono.just(ResponseEntity.ok(request.getAmount() + " is deposited from account " + accountId.toString())));
+				.execute(request.getAccountId(), request.getCustomerId(), snapshot -> Account.deposit(snapshot, request.getAmount()))
+				.then(Mono.just(ResponseEntity.ok(request.getAmount() + " is deposited from account " + request.getAccountId())));
 	}
 
 }

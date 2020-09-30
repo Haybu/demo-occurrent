@@ -17,12 +17,12 @@ package io.agilehandy.demo.web;
 
 import io.agilehandy.demo.events.AccountEvent;
 import io.agilehandy.demo.events.Serialization;
+import io.agilehandy.demo.snapshot.Snapshot;
+import io.agilehandy.demo.snapshot.SnapshotRepository;
 import io.cloudevents.CloudEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.occurrent.eventstore.api.reactor.EventStore;
-import org.occurrent.eventstore.api.reactor.EventStream;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.function.Function;
@@ -35,33 +35,30 @@ import java.util.function.Function;
 @Slf4j
 public class AccountService {
 
+	private final SnapshotRepository snapshotRepository;
 	private final EventStore eventStore;
 	private final Serialization serialization;
 
-	public AccountService(EventStore eventStore, Serialization serialization) {
+	public AccountService(SnapshotRepository snapshotRepository, EventStore eventStore, Serialization serialization) {
+		this.snapshotRepository = snapshotRepository;
 		this.eventStore = eventStore;
 		this.serialization = serialization;
 	}
 
 	// Here where events are written to streams.
-	public Mono<Void> execute(String streamId, Function<Flux<AccountEvent>, Flux<AccountEvent>> functionThatCallsDomainModel) {
-		String newStreamId = "stream" + streamId;
+	public Mono<Void> execute(String accountId, Long customerId, Function<Mono<Snapshot>, Mono<AccountEvent>> functionThatCallsDomainModel) {
 
 		// Read all events from the event store for a particular stream
-		Mono<EventStream<CloudEvent>> eventStream = eventStore.read(newStreamId);
-
-		// Convert the cloud events into domain events
-		Flux<AccountEvent> accountEventFlux = eventStream
-				.flatMapMany(e -> e.events())
-				.map(serialization::deserialize);
+		Mono<Snapshot> snapshotMono = snapshotRepository.findById(accountId);
 
 		// Call a pure function from the domain model which returns a Stream of domain events
-		Flux<AccountEvent> newDomainEvents = functionThatCallsDomainModel.apply(accountEventFlux);
+		Mono<AccountEvent> newDomainEvent = functionThatCallsDomainModel.apply(snapshotMono);
 
-		Flux<CloudEvent> cloudEventFlux = newDomainEvents.map(serialization::serialize);
+		Mono<CloudEvent> cloudEventMono = newDomainEvent.map(serialization::serialize);
 
+		String newStreamId = "stream" + customerId.toString();
 		log.info("writing event to streamId: " + newStreamId);
-		eventStore.write(newStreamId, cloudEventFlux).subscribe();
+		eventStore.write(newStreamId, cloudEventMono.flux()).subscribe();
 
 		return Mono.empty();
 	}
