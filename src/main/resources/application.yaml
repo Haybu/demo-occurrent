@@ -1,9 +1,14 @@
 spring:
-  main:
-    web-application-type: reactive
   data:
     mongodb:
       database: database
       host: localhost
       port: 27017
       replica-set-name: rs0
+
+
+mongodb:
+  collections:
+    events: accounts
+    positions: subscriptions
+

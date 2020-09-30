@@ -16,19 +16,28 @@
 package io.agilehandy.demo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.mongodb.reactivestreams.client.MongoClient;
 import io.agilehandy.demo.events.Serialization;
 import org.occurrent.eventstore.mongodb.spring.reactor.EventStoreConfig;
 import org.occurrent.eventstore.mongodb.spring.reactor.SpringReactorMongoEventStore;
 import org.occurrent.mongodb.timerepresentation.TimeRepresentation;
+import org.occurrent.subscription.api.reactor.PositionAwareReactorSubscription;
+import org.occurrent.subscription.api.reactor.ReactorSubscriptionPositionStorage;
+import org.occurrent.subscription.mongodb.spring.reactor.SpringReactorSubscriptionForMongoDB;
+import org.occurrent.subscription.mongodb.spring.reactor.SpringReactorSubscriptionPositionStorageForMongoDB;
+import org.occurrent.subscription.util.reactor.ReactorSubscriptionWithAutomaticPositionPersistence;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.ReactiveMongoTransactionManager;
+import org.springframework.data.mongodb.core.ReactiveMongoOperations;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.SimpleReactiveMongoDatabaseFactory;
 
 import java.net.URI;
+
+import static com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping.*;
 
 /**
  * @author Haytham Mohamed
@@ -44,13 +53,25 @@ public class DemoConfiguration {
 		return new Serialization(objectMapper, URI.create("urn:agilehandy:domain:account"));
 	}
 
+	//@Bean
+	public ObjectMapper objectMapper() {
+		ObjectMapper objectMapper = new ObjectMapper();
+		// Configure jackson to add type information to each serialized object
+		// Allows deserializing interfaces such as DomainEvent
+		objectMapper.activateDefaultTyping(new LaissezFaireSubTypeValidator(), EVERYTHING);
+		return objectMapper;
+	}
 
 	@Configuration
 	static class MongodbConfiguration {
 		@Value("${spring.data.mongodb.database:database}")
 		private String database;
 
-		private String COLLECTION_NAME = "accounts";
+		@Value("${mongo.collections.events:accounts}")
+		private String collection;
+
+		@Value("${mongo.collections.positions:subscriptions}")
+		private String positions;
 
 		@Bean
 		public ReactiveMongoTransactionManager mongoTransactionManager(MongoClient mongoClient) {
@@ -61,7 +82,7 @@ public class DemoConfiguration {
 		public EventStoreConfig eventStoreConfig(ReactiveMongoTransactionManager reactiveMongoTransactionManager) {
 			return new EventStoreConfig.Builder()
 					// The collection where all events will be stored
-					.eventStoreCollectionName(COLLECTION_NAME)
+					.eventStoreCollectionName(collection)
 					.transactionConfig(reactiveMongoTransactionManager)
 					// How the CloudEvent "time" property will be serialized in MongoDB! !!Important!!
 					.timeRepresentation(TimeRepresentation.RFC_3339_STRING)
@@ -71,6 +92,21 @@ public class DemoConfiguration {
 		@Bean
 		public SpringReactorMongoEventStore springReactorMongoEventStore(ReactiveMongoTemplate mongoTemplate, EventStoreConfig eventStoreConfig) {
 			return new SpringReactorMongoEventStore(mongoTemplate, eventStoreConfig);
+		}
+
+		@Bean
+		public ReactorSubscriptionPositionStorage reactorSubscriptionPositionStorage(ReactiveMongoOperations mongoOperations) {
+			return new SpringReactorSubscriptionPositionStorageForMongoDB(mongoOperations, positions);
+		}
+
+		@Bean
+		public PositionAwareReactorSubscription subscription(ReactiveMongoOperations mongoOperations) {
+			return new SpringReactorSubscriptionForMongoDB(mongoOperations, collection, TimeRepresentation.RFC_3339_STRING);
+		}
+
+		@Bean
+		public ReactorSubscriptionWithAutomaticPositionPersistence autoPersistingSubscription(PositionAwareReactorSubscription subscription, ReactorSubscriptionPositionStorage storage) {
+			return new ReactorSubscriptionWithAutomaticPositionPersistence(subscription, storage);
 		}
 	}
 

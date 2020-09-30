@@ -51,8 +51,12 @@ public class AccountController {
 		this.serialization = serialization;
 	}
 
+	@GetMapping("/ping")
+	public Mono<String> ping() { return Mono.just("pong"); }
+
 	@PostMapping("/accounts")
 	public Mono<ResponseEntity<?>> createAccount(@RequestBody AccountRequest request) {
+		log.info("creating a new account");
 		UUID accountId = UUID.randomUUID();
 		return service
 				.execute(request.getCustomerId().toString(), events -> Account.openAccount(request.getCustomerId(), accountId, request.getAmount()))
