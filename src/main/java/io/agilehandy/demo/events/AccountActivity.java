@@ -16,5 +16,5 @@
 package io.agilehandy.demo.events;
 
 public enum AccountActivity {
-	OPEN, WITHDRAW, DEPOSIT, CLOSE, SNAPSHOT;
+	OPEN, WITHDRAW, DEPOSIT, CLOSE;
 }
