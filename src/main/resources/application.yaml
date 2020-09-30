@@ -11,11 +11,6 @@ mongodb:
     events: accounts
     positions: subscriptions
 
-log4j:
-  category:
+logging:
+  level:
     org.springframework.data.mongodb: DEBUG
-  appender:
-    stdout:
-      layout:
-        ConversionPattern: "%d{ABSOLUTE} %5p %40.40c:%4L - %m%n"
-

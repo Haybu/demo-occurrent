@@ -16,7 +16,6 @@
 package io.agilehandy.demo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.mongodb.reactivestreams.client.MongoClient;
 import io.agilehandy.demo.events.Serialization;
 import org.occurrent.eventstore.mongodb.spring.reactor.EventStoreConfig;
@@ -34,11 +33,10 @@ import org.springframework.data.mongodb.ReactiveMongoTransactionManager;
 import org.springframework.data.mongodb.core.ReactiveMongoOperations;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.SimpleReactiveMongoDatabaseFactory;
+import org.springframework.data.mongodb.core.mapping.event.LoggingEventListener;
 import org.springframework.data.mongodb.repository.config.EnableReactiveMongoRepositories;
 
 import java.net.URI;
-
-import static com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping.*;
 
 /**
  * @author Haytham Mohamed
@@ -47,21 +45,12 @@ import static com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping.*;
 // run a local mongodb replicaset, from ./replica folder run $docker-compose up -d
 
 @Configuration
-@EnableReactiveMongoRepositories(basePackages = "io.agilehandy.demo.snapshot")
+@EnableReactiveMongoRepositories//(basePackages = "io.agilehandy.demo.snapshot")
 public class DemoConfiguration {
 
 	@Bean
 	public Serialization serialization(ObjectMapper objectMapper) {
 		return new Serialization(objectMapper, URI.create("urn:agilehandy:domain:account"));
-	}
-
-	//@Bean
-	public ObjectMapper objectMapper() {
-		ObjectMapper objectMapper = new ObjectMapper();
-		// Configure jackson to add type information to each serialized object
-		// Allows deserializing interfaces such as DomainEvent
-		objectMapper.activateDefaultTyping(new LaissezFaireSubTypeValidator(), EVERYTHING);
-		return objectMapper;
 	}
 
 	@Configuration
@@ -70,10 +59,17 @@ public class DemoConfiguration {
 		private String database;
 
 		@Value("${mongo.collections.events:accounts}")
-		private String collection;
+		private String eventsCollection;
 
 		@Value("${mongo.collections.positions:subscriptions}")
 		private String positions;
+
+		// registers a LoggingEventListener to demonstrate mapping behavior
+		// when streaming data.
+		@Bean
+		public LoggingEventListener mongoEventListener() {
+			return new LoggingEventListener();
+		}
 
 		@Bean
 		public ReactiveMongoTransactionManager mongoTransactionManager(MongoClient mongoClient) {
@@ -84,7 +80,7 @@ public class DemoConfiguration {
 		public EventStoreConfig eventStoreConfig(ReactiveMongoTransactionManager reactiveMongoTransactionManager) {
 			return new EventStoreConfig.Builder()
 					// The collection where all events will be stored
-					.eventStoreCollectionName(collection)
+					.eventStoreCollectionName(eventsCollection)
 					.transactionConfig(reactiveMongoTransactionManager)
 					// How the CloudEvent "time" property will be serialized in MongoDB! !!Important!!
 					.timeRepresentation(TimeRepresentation.RFC_3339_STRING)
@@ -103,7 +99,7 @@ public class DemoConfiguration {
 
 		@Bean
 		public PositionAwareReactorSubscription subscription(ReactiveMongoOperations mongoOperations) {
-			return new SpringReactorSubscriptionForMongoDB(mongoOperations, collection, TimeRepresentation.RFC_3339_STRING);
+			return new SpringReactorSubscriptionForMongoDB(mongoOperations, eventsCollection, TimeRepresentation.RFC_3339_STRING);
 		}
 
 		@Bean
@@ -111,7 +107,5 @@ public class DemoConfiguration {
 			return new ReactorSubscriptionWithAutomaticPositionPersistence(subscription, storage);
 		}
 	}
-
-
 
 }

@@ -15,8 +15,6 @@
  */
 package io.agilehandy.demo.web;
 
-import io.agilehandy.demo.domain.Account;
-import io.agilehandy.demo.domain.AccountService;
 import io.agilehandy.demo.events.AccountEvent;
 import io.agilehandy.demo.events.Serialization;
 import lombok.extern.slf4j.Slf4j;

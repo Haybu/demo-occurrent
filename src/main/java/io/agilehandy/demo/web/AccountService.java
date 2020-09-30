@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.agilehandy.demo.domain;
+package io.agilehandy.demo.web;
 
 import io.agilehandy.demo.events.AccountEvent;
 import io.agilehandy.demo.events.Serialization;
 import io.cloudevents.CloudEvent;
+import lombok.extern.slf4j.Slf4j;
 import org.occurrent.eventstore.api.reactor.EventStore;
 import org.occurrent.eventstore.api.reactor.EventStream;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ import java.util.function.Function;
  **/
 
 @Service
+@Slf4j
 public class AccountService {
 
 	private final EventStore eventStore;
@@ -41,9 +43,12 @@ public class AccountService {
 		this.serialization = serialization;
 	}
 
+	// Here where events are written to streams.
 	public Mono<Void> execute(String streamId, Function<Flux<AccountEvent>, Flux<AccountEvent>> functionThatCallsDomainModel) {
+		String newStreamId = "stream" + streamId;
+
 		// Read all events from the event store for a particular stream
-		Mono<EventStream<CloudEvent>> eventStream = eventStore.read(streamId);
+		Mono<EventStream<CloudEvent>> eventStream = eventStore.read(newStreamId);
 
 		// Convert the cloud events into domain events
 		Flux<AccountEvent> accountEventFlux = eventStream
@@ -55,7 +60,8 @@ public class AccountService {
 
 		Flux<CloudEvent> cloudEventFlux = newDomainEvents.map(serialization::serialize);
 
-		eventStore.write(streamId, cloudEventFlux).subscribe();
+		log.info("writing event to streamId: " + newStreamId);
+		eventStore.write(newStreamId, cloudEventFlux).subscribe();
 
 		return Mono.empty();
 	}

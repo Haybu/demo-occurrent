@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.agilehandy.demo.domain;
+package io.agilehandy.demo.web;
 
 import io.agilehandy.demo.events.AccountDeposited;
 import io.agilehandy.demo.events.AccountEvent;

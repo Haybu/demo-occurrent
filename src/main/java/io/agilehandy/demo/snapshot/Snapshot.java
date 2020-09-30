@@ -16,6 +16,7 @@
 package io.agilehandy.demo.snapshot;
 
 import io.agilehandy.demo.events.AccountEvent;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
@@ -27,10 +28,11 @@ import reactor.core.publisher.Mono;
  * @author Haytham Mohamed
  **/
 
-@Document
+@Document("snapshots")
 @Data
-@ToString
+@AllArgsConstructor
 @NoArgsConstructor
+@ToString
 public class Snapshot {
 
 	@Id
@@ -40,12 +42,12 @@ public class Snapshot {
 
 	private Double balance;
 
-	private Long version;
+	private Long streamVersion;
 
 	public Mono<Snapshot> updateFrom(AccountEvent event, Long streamVersion) {
 		this.accountId = event.getAccountId().toString();
 		this.customerId = event.getCustomerId();
-		this.version = streamVersion;
+		this.streamVersion = streamVersion;
 		switch (event.getActivity()) {
 			case OPEN: balance = event.getAmount(); break;
 			case WITHDRAW: balance =- event.getAmount(); break;

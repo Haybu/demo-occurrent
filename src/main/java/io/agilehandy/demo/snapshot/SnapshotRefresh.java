@@ -52,15 +52,21 @@ public class SnapshotRefresh implements DisposableBean {
 	@PostConstruct
 	public Mono<Void> updateSnapshotWhenNewEventsAreWrittenToEventStore() {
 		Disposable disposable = subscriptionForMongoDB.subscribe(SUBSCRIBER_ID, cloudEvent -> {
+
+			AccountEvent accountEvent = serialization.deserialize(cloudEvent);
 			String streamId = OccurrentExtensionGetter.getStreamId(cloudEvent);
 			long streamVersion = OccurrentExtensionGetter.getStreamVersion(cloudEvent);
-			AccountEvent accountEvent = serialization.deserialize(cloudEvent);
 
-			return snapshotRepository.findById(streamId)
+			log.info("snapshot reading from streamId: " + streamId);
+			log.info("update account with id: " + accountEvent.getAccountId());
+
+			return snapshotRepository.findById(accountEvent.getAccountId().toString())
 					.switchIfEmpty(Mono.just(new Snapshot()))
 					.flatMap(s -> s.updateFrom(accountEvent, streamVersion))
+					.flatMap(snapshotRepository::save)
 					.doOnNext(s -> log.info("snapshot refreshed: " + s))
-					.doOnNext(snapshotRepository::save)
+					//.then(snapshotRepository.findById(accountEvent.getAccountId().toString()))
+					//.doOnNext(s -> log.info(s.toString()))
 					.then();
 		}).subscribe();
 
