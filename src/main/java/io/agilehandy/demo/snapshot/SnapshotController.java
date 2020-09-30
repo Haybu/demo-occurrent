@@ -13,23 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.agilehandy.demo.events;
+package io.agilehandy.demo.snapshot;
 
-import lombok.Data;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
 
 /**
  * @author Haytham Mohamed
  **/
 
-@Data
-public class AccountSnapshotCaptured extends AbstractAccountEvent implements AccountEvent {
-	public AccountSnapshotCaptured() {
-		this.setEventId(UUID.fromString("0"));
-		this.setActivity(AccountActivity.SNAPSHOT);
-		this.setTime(LocalDateTime.now());
+@RestController
+public class SnapshotController {
+
+	private final SnapshotRepository repository;
+
+	public SnapshotController(SnapshotRepository repository) {
+		this.repository = repository;
+	}
+
+	@GetMapping("/snapshots")
+	public Flux<Snapshot> snapshots() {
+		return repository.findAll();
 	}
 
 }

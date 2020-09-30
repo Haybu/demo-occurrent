@@ -33,7 +33,7 @@ public abstract class AbstractAccountEvent {
 
 	private Long customerId;
 
-	private AccountEvent.Activity activity;
+	private AccountActivity activity;
 
 	private Double amount;
 

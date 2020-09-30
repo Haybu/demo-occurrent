@@ -31,7 +31,7 @@ public class AccountWithdrew extends AbstractAccountEvent implements AccountEven
 
 	public AccountWithdrew() {
 		this.setEventId(UUID.randomUUID());
-		this.setActivity(Activity.WITHDRAW);
+		this.setActivity(AccountActivity.WITHDRAW);
 		this.setTime(LocalDateTime.now());
 	}
 

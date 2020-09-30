@@ -31,7 +31,7 @@ public class AccountOpened extends AbstractAccountEvent implements AccountEvent 
 
 	public AccountOpened() {
 		this.setEventId(UUID.randomUUID());
-		this.setActivity(Activity.OPEN);
+		this.setActivity(AccountActivity.OPEN);
 		this.setTime(LocalDateTime.now());
 	}
 

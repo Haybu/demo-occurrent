@@ -34,6 +34,7 @@ import org.springframework.data.mongodb.ReactiveMongoTransactionManager;
 import org.springframework.data.mongodb.core.ReactiveMongoOperations;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.SimpleReactiveMongoDatabaseFactory;
+import org.springframework.data.mongodb.repository.config.EnableReactiveMongoRepositories;
 
 import java.net.URI;
 
@@ -46,6 +47,7 @@ import static com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping.*;
 // run a local mongodb replicaset, from ./replica folder run $docker-compose up -d
 
 @Configuration
+@EnableReactiveMongoRepositories(basePackages = "io.agilehandy.demo.snapshot")
 public class DemoConfiguration {
 
 	@Bean

@@ -24,15 +24,11 @@ import java.util.UUID;
 
 public interface AccountEvent {
 
-	enum Activity {
-		OPEN, WITHDRAW, DEPOSIT, CLOSE, SNAPSHOT;
-	}
-
 	UUID getEventId();
 	UUID getAccountId();
 	Long getCustomerId();
 	Double getAmount();
-	Activity getActivity();
+	AccountActivity getActivity();
 	LocalDateTime getTime();
 
 	void setEventId(UUID id);

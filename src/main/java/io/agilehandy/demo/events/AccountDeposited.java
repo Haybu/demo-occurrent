@@ -31,7 +31,7 @@ public class AccountDeposited extends AbstractAccountEvent implements AccountEve
 
 	public AccountDeposited() {
 		this.setEventId(UUID.randomUUID());
-		this.setActivity(Activity.DEPOSIT);
+		this.setActivity(AccountActivity.DEPOSIT);
 		this.setTime(LocalDateTime.now());
 	}
 

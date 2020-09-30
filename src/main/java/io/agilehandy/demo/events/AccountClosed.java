@@ -31,7 +31,7 @@ public class AccountClosed extends AbstractAccountEvent implements AccountEvent 
 
 	public AccountClosed() {
 		this.setEventId(UUID.randomUUID());
-		this.setActivity(Activity.CLOSE);
+		this.setActivity(AccountActivity.CLOSE);
 		this.setTime(LocalDateTime.now());
 	}
 

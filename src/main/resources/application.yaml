@@ -6,9 +6,16 @@ spring:
       port: 27017
       replica-set-name: rs0
 
-
 mongodb:
   collections:
     events: accounts
     positions: subscriptions
+
+log4j:
+  category:
+    org.springframework.data.mongodb: DEBUG
+  appender:
+    stdout:
+      layout:
+        ConversionPattern: "%d{ABSOLUTE} %5p %40.40c:%4L - %m%n"
 

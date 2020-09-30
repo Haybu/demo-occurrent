@@ -15,21 +15,6 @@
  */
 package io.agilehandy.demo.events;
 
-import lombok.Data;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
-
-/**
- * @author Haytham Mohamed
- **/
-
-@Data
-public class AccountSnapshotCaptured extends AbstractAccountEvent implements AccountEvent {
-	public AccountSnapshotCaptured() {
-		this.setEventId(UUID.fromString("0"));
-		this.setActivity(AccountActivity.SNAPSHOT);
-		this.setTime(LocalDateTime.now());
-	}
-
+public enum AccountActivity {
+	OPEN, WITHDRAW, DEPOSIT, CLOSE, SNAPSHOT;
 }

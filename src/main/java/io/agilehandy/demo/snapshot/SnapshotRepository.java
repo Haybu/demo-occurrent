@@ -13,23 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.agilehandy.demo.events;
+package io.agilehandy.demo.snapshot;
 
-import lombok.Data;
+import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
-
-/**
- * @author Haytham Mohamed
- **/
-
-@Data
-public class AccountSnapshotCaptured extends AbstractAccountEvent implements AccountEvent {
-	public AccountSnapshotCaptured() {
-		this.setEventId(UUID.fromString("0"));
-		this.setActivity(AccountActivity.SNAPSHOT);
-		this.setTime(LocalDateTime.now());
-	}
+public interface SnapshotRepository extends ReactiveMongoRepository<Snapshot, String> {
 
 }
